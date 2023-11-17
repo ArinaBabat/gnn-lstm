@@ -3,13 +3,19 @@ import pyscipopt
 
 
 class DefaultInformationFunction:
-    def before_reset(self, model):
-        pass
+    def before_reset(self, model):# Метод, который вызывается перед сбросом модели. 
+        pass              # В данном случае, метод не выполняет никаких действий (pass)
 
+    """
+    Метод для извлечения информации о модели.
+    Принимает два аргумента: model - объект модели SCIP,
+    done - флаг, указывающий, завершена ли оптимизация.
+    """
     def extract(self, model, done):
-        m = model.as_pyscipopt()
+        m = model.as_pyscipopt() # представляет собой тот же экземпляр оптимизационной модели,
+                                 # что и model, но преобразованный в формат, понятный библиотеке pyscipopt
 
-        stage = m.getStage()
+        stage = m.getStage()    # Получает текущую стадию оптимизационной модели
         sense = 1 if m.getObjectiveSense() == "minimize" else -1
 
         primal_bound = sense * m.infinity()
