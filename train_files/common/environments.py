@@ -53,7 +53,10 @@ class DefaultInformationFunction:
             "status": status,                # Статус текущей оптимизационной модели
         }
 
-
+"""
+Наследует от класса ecole.dynamics.PrimalSearchDynamics
+Этот класс представляет собой реализацию динамики для поиска примитивных (тривиальных) решений в контексте SCIP
+"""
 class RootPrimalSearchDynamics(ecole.dynamics.PrimalSearchDynamics):
     def __init__(self, time_limit, n_trials=-1):
         super().__init__(
