@@ -30,25 +30,27 @@ class DefaultInformationFunction:
         status = m.getStatus()    # Получает текущий статус оптимизационной модели. 
                 # Будет содержать информацию о том, завершено ли решение, произошла ли ошибка, было ли найдено оптимальное решение и так далее
 
+        # Информация извлекается в зависимости от стадии оптимизации
         if stage >= pyscipopt.scip.PY_SCIP_STAGE.PROBLEM:
-            primal_bound = m.getObjlimit()
-            nnodes = m.getNNodes()
-            solvingtime = m.getSolvingTime()
+            primal_bound = m.getObjlimit()    # устанавливается в значение целевой функции, установленное в модели
+            nnodes = m.getNNodes()    # Количество узлов в дереве поиска
+            solvingtime = m.getSolvingTime()    # Время, затраченное на решение задачи
 
         if stage >= pyscipopt.scip.PY_SCIP_STAGE.TRANSFORMED:
-            primal_bound = m.getPrimalbound()
-            dual_bound = m.getDualbound()
+            primal_bound = m.getPrimalbound()    # Верхняя граница (целевая функция)
+            dual_bound = m.getDualbound()    # Нижняя граница
 
         if stage >= pyscipopt.scip.PY_SCIP_STAGE.PRESOLVING:
-            nlpiters = m.getNLPIterations()
+            nlpiters = m.getNLPIterations()    # Количество итераций нелинейного программирования
 
+# Формируется и возвращается словарь, содержащий информацию о текущем состоянии оптимизационной модели
         return {
-            "primal_bound": primal_bound,
-            "dual_bound": dual_bound,
-            "nlpiters": nlpiters,
-            "nnodes": nnodes,
-            "solvingtime": solvingtime,
-            "status": status,
+            "primal_bound": primal_bound,    # Верхняя граница (целевая функция)
+            "dual_bound": dual_bound,        # Нижняя граница
+            "nlpiters": nlpiters,            # Количество итераций нелинейного программирования
+            "nnodes": nnodes,                # Количество узлов в дереве поиска
+            "solvingtime": solvingtime,      # Время, затраченное на решение задачи
+            "status": status,                # Статус текущей оптимизационной модели
         }
 
 
