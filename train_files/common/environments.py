@@ -58,29 +58,34 @@ class DefaultInformationFunction:
 Этот класс представляет собой реализацию динамики для поиска примитивных (тривиальных) решений в контексте SCIP
 """
 class RootPrimalSearchDynamics(ecole.dynamics.PrimalSearchDynamics):
-    def __init__(self, time_limit, n_trials=-1):
+    def __init__(self, time_limit, n_trials=-1):    # time_limit - ограничение времени на оптимизацию,
+                                    # n_trials - количество проб при каждом узле (-1 вероятно неограниченное количество проб)
         super().__init__(
-            trials_per_node=n_trials, depth_freq=1, depth_start=0, depth_stop=0
-        )  # only at the root node
+            trials_per_node=n_trials,    #  количество проб при каждом узле
+            depth_freq=1,    # частота выполнения проб на каждой глубине дерева поиска
+            depth_start=0,     # начальная глубина, на которой применяются пробы
+            depth_stop=0    # конечная глубина, на которой применяются пробы
+        )  # только к корневому узлу дерева поиска
         self.time_limit = time_limit
 
-    def reset_dynamics(self, model):
-        pyscipopt_model = model.as_pyscipopt()
+    def reset_dynamics(self, model):    # Метод для сброса динамики. Принимает объект модели
+        pyscipopt_model = model.as_pyscipopt()    # Преобразует модель model в формат, с которым можно работать в библиотеке pyscipopt
 
-        # disable SCIP heuristics
+        # disable SCIP heuristics   Отключает эвристики SCIP
         pyscipopt_model.setHeuristics(pyscipopt.scip.PY_SCIP_PARAMSETTING.OFF)
 
-        # disable restarts
+        # disable restarts    Устанавливает параметры модели для отключения перезапусков оптимизации
         model.set_params(
             {"estimation/restarts/restartpolicy": "n",}
         )
 
         # process the root node
-        done, action_set = super().reset_dynamics(model)
+        done, action_set = super().reset_dynamics(model)    # вызов метода reset_dynamics родительского класса 
+                                            # о множестве допустимых действий для данного состояния оптимизационной задачи
 
         # set time limit after reset
-        reset_time = pyscipopt_model.getSolvingTime()
-        pyscipopt_model.setParam("limits/time", self.time_limit + reset_time)
+        reset_time = pyscipopt_model.getSolvingTime()    # затраченное на решение модели после сброса
+        pyscipopt_model.setParam("limits/time", self.time_limit + reset_time)   # yстанавливает ограничение времени для модели, добавляя к текущему времени сброса значение 
 
         return done, action_set
 
