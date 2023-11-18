@@ -237,7 +237,8 @@ if __name__ == "__main__":
 
         cumulated_rewards = [] # будет использоваться для хранения значений накопленного вознаграждения на каждом временном шаге
         # loop over the environment
-        while not done:
+        while not done:     # Взаимодействует с средой, выполняя действия согласно стратегии агента. 
+                            # Повторяется, пока среда не завершит эпизод.
             action = policy(action_set, observation)
             # (scores, scores_are_expert), node_observation = observation
             # action = action_set[scores[action_set].argmax()]
