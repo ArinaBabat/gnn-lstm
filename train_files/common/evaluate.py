@@ -239,35 +239,38 @@ if __name__ == "__main__":
         # loop over the environment
         while not done:     # Взаимодействует с средой, выполняя действия согласно стратегии агента. 
                             # Повторяется, пока среда не завершит эпизод.
-            action = policy(action_set, observation)
+            action = policy(action_set, observation) # Агент выбирает действие, используя свою стратегию (policy). Принимает текущий 
+                                # action_set (набор доступных действий) и observation (наблюдение) для принятия решения о следующем действии.
             # (scores, scores_are_expert), node_observation = observation
             # action = action_set[scores[action_set].argmax()]
-            observation, action_set, reward, done, info = env.step(action)
+            observation, action_set, reward, done, info = env.step(action) # Агент выполняет выбранное действие в среде, 
+                            # возвращает новое наблюдение, обновленный action_set, полученное вознаграждение, 
+                            # флаг завершения эпизода, и дополнительную информацию о шаге
             if args.debug:
                 print(f"  action: {action}")
                 print(f"  info: {info}")
                 print(f"  reward: {reward}")
                 print(f"  action_set: {action_set}")
 
-            cumulated_reward += reward
+            cumulated_reward += reward # Обновление накопленного вознаграждения путем добавления текущего вознаграждения
 
-            cumulated_rewards.append(cumulated_reward)
+            cumulated_rewards.append(cumulated_reward) # Значение накопленного вознаграждения добавляется в список
 
         print(f"  cumulated reward (to be maximized): {cumulated_reward}")
         print(time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime()))
 
-        np.save(f"/data/load_random_{instance_count}.npy", cumulated_rewards)
+        np.save(f"/data/load_random_{instance_count}.npy", cumulated_rewards) # Сохраняет массив cumulated_rewards в файл с использованием номера экземпляра задачи в имени файла.
         # print(step_count)
         # save instance results
-        with open(results_file, mode="a") as csv_file:
+        with open(results_file, mode="a") as csv_file: #Добавляет результаты текущего экземпляра в CSV-файл с результатами.
             writer = csv.DictWriter(csv_file, fieldnames=results_fieldnames)
             writer.writerow(
                 {
-                    "instance": str(instance),
-                    "seed": seed,
-                    "initial_primal_bound": initial_primal_bound,
-                    "initial_dual_bound": initial_dual_bound,
-                    "objective_offset": objective_offset,
-                    "cumulated_reward": cumulated_reward,
+                    "instance": str(instance),    # Имя текущего экземпляра
+                    "seed": seed,    # Зерно, используемое для инициализации агента и среды, чтобы обеспечить детерминированное поведение
+                    "initial_primal_bound": initial_primal_bound, # Начальная примитивная оценка (bound) для текущего экземпляра
+                    "initial_dual_bound": initial_dual_bound, # Начальная двойственная оценка (bound) для текущего экземпляра
+                    "objective_offset": objective_offset, # Смещение целевой функции
+                    "cumulated_reward": cumulated_reward, # Накопленное вознаграждение для текущего экземпляра
                 }
             )
