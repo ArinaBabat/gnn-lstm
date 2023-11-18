@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
     import sys
 
-    sys.path.insert(1, str(pathlib.Path.cwd()))
+    sys.path.insert(1, str(pathlib.Path.cwd())) # Вставляет текущий путь в системный путь, чтобы импортировать модули из текущего рабочего каталога.
 
     # set up the proper agent, environment and goal for the task Настроить соответствующего агента, среду и цель для задачи
     if args.task == "primal":
@@ -175,11 +175,12 @@ if __name__ == "__main__":
     # override from command-line argument if provided Переопределить, если предоставлено через аргумент командной строки
     time_limit = getattr(args, "timelimit", time_limit)
 
+    # Создает объекты агента, функции наблюдения, и целевой функции
     policy = Policy(problem=args.problem)
     observation_function = ObservationFunction(problem=args.problem)
-
     integral_function = BoundIntegral()
 
+    # Создает объект среды env с установленными параметрами времени и функциями наблюдения и целевой функцией
     env = Environment(  # Environment
         time_limit=time_limit,
         observation_function=observation_function,  # (ExploreThenStrongBranch(expert_probability=1.0),observation_function),              #observation_function, ec.observation.NodeBipartite()
@@ -188,22 +189,27 @@ if __name__ == "__main__":
 
     # evaluation loop Цикл оценки
     instance_count = 0
-    for seed, instance in enumerate(instance_files):
+    """Проходится по списку экземпляров задач, представленных файлами, и в каждой итерации устанавливает
+    зерно (seed) для агента, среды и функции наблюдения для обеспечения детерминированного поведения"""
+    for seed, instance in enumerate(instance_files): 
         instance_count += 1
         # seed both the agent and the environment (deterministic behavior) Установите зерно для агента и среды (детерминированное поведение)
-        observation_function.seed(seed)
-        policy.seed(seed)
-        env.seed(seed)
+        # Это делается для обеспечения детерминированного поведения
+        observation_function.seed(seed) # Устанавливает зерно для генератора случайных чисел, используемого в функции наблюдения
+        policy.seed(seed) # Устанавливает зерно для генератора случайных чисел, используемого в стратегии агента
+        env.seed(seed) # Устанавливает зерно для генератора случайных чисел в среде
 
         # read the instance's initial primal and dual bounds from JSON file Считать начальные примитивные и двойственные оценки для экземпляра из файла JSON
-        with open(instance.with_name(instance.stem).with_suffix(".json")) as f:
-            instance_info = json.load(f)
+        with open(instance.with_name(instance.stem).with_suffix(".json")) as f:    
+            instance_info = json.load(f)    # Читает информацию о текущем экземпляре задачи из JSON файла. 
+                                        # Эта информация включает начальные прямые и двойственные оценки
 
         # set up the reward function parameters for that instance Настроить параметры функции вознаграждения для этого экземпляра
-        initial_primal_bound = instance_info["primal_bound"]
-        initial_dual_bound = instance_info["dual_bound"]
-        objective_offset = 0
+        initial_primal_bound = instance_info["primal_bound"] # Извлекает начальную оценку решения задачи оптимизации
+        initial_dual_bound = instance_info["dual_bound"] # Извлекает начальную оценку для двойственного решения
+        objective_offset = 0     # Устанавливает смещение для целевой функции
 
+        # Устанавливает параметры функции вознаграждения. Используется для интегрирования значений в процессе обучения
         integral_function.set_parameters(
             initial_primal_bound=initial_primal_bound,
             initial_dual_bound=initial_dual_bound,
@@ -217,19 +223,19 @@ if __name__ == "__main__":
         print(f"  initial dual bound: {initial_dual_bound}")
         print(f"  objective offset: {objective_offset}")
 
-        # reset the environment
+        # reset the environment сброс среды в начальное состояние для текущего экземпляра задачи
         observation, action_set, reward, done, info = env.reset(
             str(instance), objective_limit=initial_primal_bound
         )
 
-        if args.debug:
+        if args.debug:    # проверяет, включен ли режим отладки
             print(f"  info: {info}")
             print(f"  reward: {reward}")
             print(f"  action_set: {action_set}")
 
-        cumulated_reward = 0  # discard initial reward
+        cumulated_reward = 0  # discard initial reward используется для отслеживания накопленного вознаграждения в процессе взаимодействия с средой
 
-        cumulated_rewards = []
+        cumulated_rewards = [] # будет использоваться для хранения значений накопленного вознаграждения на каждом временном шаге
         # loop over the environment
         while not done:
             action = policy(action_set, observation)
