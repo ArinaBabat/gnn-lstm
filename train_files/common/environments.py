@@ -194,48 +194,75 @@ class ConfiguringDynamics(ecole.dynamics.ConfiguringDynamics):
         return done, action_set    # done: Решена ли задача. Всегда истина.
                                    # action_set: Не используется.
 
-
+"""
+Подкласс ecole.environment.Environment
+Экосистемный частично наблюдаемый процесс принятия решений Маркова (POMDP) Ecole.
+Подобно OpenAI Gym, среды представляют задачу, которую агент должен решить. 
+Для максимальной настраиваемости различные компоненты объединяются в этом классе.
+"""
 class ObjectiveLimitEnvironment(ecole.environment.Environment):
     def reset(self, instance, objective_limit=None, *dynamics_args, **dynamics_kwargs):
-        """We add one optional parameter not supported by Ecole yet: the instance's objective limit."""
-        self.can_transition = True
+        """We add one optional parameter not supported by Ecole yet: the instance's objective limit.
+            Мы добавляем один дополнительный параметр, который пока не поддерживается Ecole: ограничение целевой функции для экземпляра
+            instance: Задача комбинаторной оптимизации, которую необходимо решить во время нового эпизода. Это может быть либо путь к файлу с задачей, который может быть прочитан SCIP, либо модель, данные по определению задачи которой будут скопированы.
+            dynamics_args: Дополнительные аргументы передаются как есть в основную динамику.
+            dynamics_kwargs: Дополнительные аргументы передаются как есть в основную динамику.
+        Этот метод переводит среду в новое начальное состояние, то есть начинает новый эпизод. Метод можно вызывать в любой момент времени"""
+        self.can_transition = True # Устанавливается флаг can_transition в True, указывающий, что среда может выполнять переходы
         try:
-            if isinstance(instance, ecole.core.scip.Model):
-                self.model = instance.copy_orig()
+            if isinstance(instance, ecole.core.scip.Model): #если входной аргумент instance является экземпляром ecole.core.scip.Model
+                self.model = instance.copy_orig() # Создается копия модели
             else:
-                self.model = ecole.core.scip.Model.from_file(instance)
-            self.model.set_params(self.scip_params)
+                self.model = ecole.core.scip.Model.from_file(instance) #иначе загружается модель из файла
+            self.model.set_params(self.scip_params) # Устанавливаются параметры модели.
 
-            # >>> changes specific to this environment
-            if objective_limit is not None:
-                self.model.as_pyscipopt().setObjlimit(objective_limit)
+            # >>> changes specific to this environment Изменения, специфичные для этой среды
+            if objective_limit is not None: # Если предоставлен ограничитель целевой функции
+                self.model.as_pyscipopt().setObjlimit(objective_limit) # устанавливается соответствующий параметр модели
             # <<<
 
-            self.dynamics.set_dynamics_random_state(self.model, self.random_engine)
+            self.dynamics.set_dynamics_random_state(self.model, self.random_engine) # Устанавливается случайное состояние для динамики среды
 
-            # Reset data extraction functions
+            # Reset data extraction functions Сбрасываются функции извлечения данных
             self.reward_function.before_reset(self.model)
             self.observation_function.before_reset(self.model)
             self.information_function.before_reset(self.model)
 
-            # Place the environment in its initial state
+            # Place the environment in its initial state Среда помещается в начальное состояние путем вызова метода reset_dynamics у динамики
             done, action_set = self.dynamics.reset_dynamics(
                 self.model, *dynamics_args, **dynamics_kwargs
             )
-            self.can_transition = not done
+            self.can_transition = not done # Обновляется флаг can_transition на основе статуса done
 
-            # Extract additional data to be returned by reset
-            reward_offset = self.reward_function.extract(self.model, done)
-            if not done:
-                observation = self.observation_function.extract(self.model, done)
-            else:
+            # Extract additional data to be returned by reset Извлекаются дополнительные данные для возврата из метода
+            reward_offset = self.reward_function.extract(self.model, done) # вызывается метод extract объекта reward_function для извлечения 
+                                                                        # значения награды из текущего состояния модели. Значение done указывает,
+                                                                        # завершено ли текущее состояние (True, если среда в терминальном состоянии)
+            if not done:     # Если не завершено текущее состояние
+                observation = self.observation_function.extract(self.model, done) # Вызывается метод extract объекта observation_function 
+                                                        # для извлечения наблюдения из текущего состояния модели
+            else:     # Если среда в терминальном состоянии
                 observation = None
-            information = self.information_function.extract(self.model, done)
+            information = self.information_function.extract(self.model, done) # Вызывается метод для извлечения дополнительной информации из текущего состояния модели
 
-            return observation, action_set, reward_offset, done, information
+            return observation, action_set, reward_offset, done, information 
+                        """ observation: Наблюдение, извлеченное из начального состояния. 
+                                         Обычно используется для выполнения следующего действия.
+                            action_set: Опциональное подмножество, которое определяет, 
+                                        какие действия принимаются в следующем переходе.
+                                        Для некоторых сред, множество действий может изменяться при каждом переходе.
+                            reward_offset: Смещение на общее накопленное вознаграждение, также известное как начальное вознаграждение. 
+                                           Это вознаграждение не влияет на обучение (поскольку действий еще не было предпринято), 
+                                           но может быть использовано для целей оценки. Например, в общем накопленном вознаграждении 
+                                           эпизода можно учесть вычисления, произошедшие во время reset() (например, время вычислений, количество итераций ЛП в предварительном решении и так далее).
+                            done: Булев флаг, указывающий, является ли текущее состояние терминальным.
+                                  Если этот флаг истинен, то текущий эпизод завершен, и метод step() больше вызвать нельзя.
+                            info: Коллекция средоспецифичной информации о переходе. 
+                                  Это необходимо для проблемы управления, но полезно для получения представления о среде.
+                        """
         except Exception as e:
-            self.can_transition = False
-            raise e
+            self.can_transition = False # Обработчик исключений устанавливает can_transition в False
+            raise e            # и повторно вызывает исключение в случае возникновения ошибки
 
 
 class RootPrimalSearch(ObjectiveLimitEnvironment):
