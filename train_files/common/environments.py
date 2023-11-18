@@ -264,17 +264,17 @@ class ObjectiveLimitEnvironment(ecole.environment.Environment):
             self.can_transition = False # Обработчик исключений устанавливает can_transition в False
             raise e            # и повторно вызывает исключение в случае возникновения ошибки
 
-
+# Этот класс представляет собой окружение для корневого прямого поиска
 class RootPrimalSearch(ObjectiveLimitEnvironment):
     __Dynamics__ = RootPrimalSearchDynamics
     __DefaultInformationFunction__ = DefaultInformationFunction
 
-
+# Этот класс представляет собой окружение для процесса ветвления
 class Branching(ObjectiveLimitEnvironment):
     __Dynamics__ = BranchingDynamics
     __DefaultInformationFunction__ = DefaultInformationFunction
 
-
+# Этот класс представляет собой окружение для конфигурации
 class Configuring(ObjectiveLimitEnvironment):
     __Dynamics__ = ConfiguringDynamics
     __DefaultInformationFunction__ = DefaultInformationFunction
