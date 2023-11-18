@@ -135,26 +135,41 @@ class BranchingDynamics(ecole.dynamics.BranchingDynamics):
                                     # Индексы переменных (значения в action_set) - это их позиция в исходной задаче (SCIPvarGetProbindex).
                                     # Порядок переменных в action_set произвольный.
 
-
+"""
+Наследуется от класса ecole.dynamics.ConfiguringDynamics
+Динамика настройки параметров решения.
+Эти динамики предназначены для использования в качестве (контекстуального) бандита
+для поиска хороших параметров для SCIP.
+"""
 class ConfiguringDynamics(ecole.dynamics.ConfiguringDynamics):
     def __init__(self, time_limit):
-        super().__init__()
+        super().__init__()    # Вызывает конструктор родительского класса, чтобы создать новую динамику
         self.time_limit = time_limit
 
-    def reset_dynamics(self, model):
-        pyscipopt_model = model.as_pyscipopt()
+    def reset_dynamics(self, model):    # Метод для сброса динамики. Принимает объект модели
+        pyscipopt_model = model.as_pyscipopt() # Преобразует модель в формат, с которым можно работать в библиотеке pyscipopt
 
         # process the root node
-        done, action_set = super().reset_dynamics(model)
+        done, action_set = super().reset_dynamics(model)    """ Вызывает метод reset_dynamics базового класса
+                            В ecole: 
+                            Ничего не делает.
+                            Пользователи могут наследоваться от этой динамики,
+                            чтобы изменить момент в процессе решения, когда будут установлены параметры 
+                            (например, после предварительного решения).
+                            Параметры: model: Состояние процесса принятия решений Маркова. Передается средой.
+                            Возвращает: done: Решена ли задача. Всегда ложь.
+                                        action_set: Не используется.
+                            """
 
         # set time limit after reset
-        reset_time = pyscipopt_model.getSolvingTime()
-        pyscipopt_model.setParam("limits/time", self.time_limit + reset_time)
+        reset_time = pyscipopt_model.getSolvingTime() # Получает время, затраченное на решение модели после сброса.
+        pyscipopt_model.setParam("limits/time", self.time_limit + reset_time) # Устанавливает ограничение времени для модели, добавляя к текущему времени сброса значение time_limit
 
-        return done, action_set
+        return done, action_set    # done: Решена ли задача. Всегда ложь.
+                                    # action_set: Не используется.
 
-    def step_dynamics(self, model, action):
-        forbidden_params = [
+    def step_dynamics(self, model, action): # Метод для выполнения шага динамики. Принимает объект модели и действие
+        forbidden_params = [    # Список параметров SCIP, изменение которых запрещено
             "limits/time",
             "timing/clocktype",
             "timing/enabled",
@@ -163,13 +178,21 @@ class ConfiguringDynamics(ecole.dynamics.ConfiguringDynamics):
             "timing/statistictiming",
         ]
 
-        for param in forbidden_params:
-            if param in action:
+        for param in forbidden_params:    # Проверяет, содержатся ли запрещенные параметры в действии
+            if param in action:    # Если да, выбрасывается исключение ValueError
                 raise ValueError(f"Setting the SCIP parameter '{param}' is forbidden.")
 
-        done, action_set = super().step_dynamics(model, action)
+        done, action_set = super().step_dynamics(model, action) """ Вызывает метод step_dynamics базового класса
+                            В ecole: 
+                            Устанавливает параметры и решает задачу.
+                            Параметры: model: Состояние процесса принятия решений Маркова. Передается средой.
+                                       action: Отображение имен параметров и их значений.
+                            Возвращает: done: Решена ли задача. Всегда истина.
+                                        action_set: Не используется.
+                            """
 
-        return done, action_set
+        return done, action_set    # done: Решена ли задача. Всегда истина.
+                                   # action_set: Не используется.
 
 
 class ObjectiveLimitEnvironment(ecole.environment.Environment):
