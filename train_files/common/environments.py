@@ -89,31 +89,51 @@ class RootPrimalSearchDynamics(ecole.dynamics.PrimalSearchDynamics):
 
         return done, action_set
 
+"""
+наследуется от класса ecole.dynamics.BranchingDynamics
+Основана на обратном вызове ветвления SCIP с максимальным приоритетом и без ограничения по глубине. 
+Динамика передает управление пользователю каждый раз, когда вызывается обратный вызов ветвления.
+Пользователь получает в качестве набора действий список кандидатов для ветвления 
+и ожидается выбор одного из них в качестве действия.
 
+"""
 class BranchingDynamics(ecole.dynamics.BranchingDynamics):
     def __init__(self, time_limit):
-        super().__init__(pseudo_candidates=True)
-        self.time_limit = time_limit
+        super().__init__(pseudo_candidates=True) # Вызывает конструктор родительского.
+                            # pseudo_candidates Определяет, содержит ли набор действий псевдо-кандидатов для ветвления (SCIPgetPseudoBranchCands)
+                            # или кандидатов для ветвления по ЛП (SCIPgetPseudoBranchCands).
+        self.time_limit = time_limit # Инициализирует атрибут time_limit значением, переданным в аргументе.
 
-    def reset_dynamics(self, model):
-        pyscipopt_model = model.as_pyscipopt()
+    def reset_dynamics(self, model):  # Метод reset_dynamics для сброса динамики
+        pyscipopt_model = model.as_pyscipopt()    # Преобразует модель model в формат, с которым можно работать в библиотеке pyscipopt
 
         # disable SCIP heuristics
-        pyscipopt_model.setHeuristics(pyscipopt.scip.PY_SCIP_PARAMSETTING.OFF)
+        pyscipopt_model.setHeuristics(pyscipopt.scip.PY_SCIP_PARAMSETTING.OFF) # Отключает эвристики SCIP
 
         # disable restarts
-        model.set_params(
+        model.set_params(    #  Устанавливает параметры модели для отключения перезапусков
             {"estimation/restarts/restartpolicy": "n",}
         )
 
-        # process the root node
-        done, action_set = super().reset_dynamics(model)
-
+        # process the root node Для корневого узла
+        done, action_set = super().reset_dynamics(model)    """Вызывает метод reset_dynamics базового класса (ecole.dynamics.BranchingDynamics) и возвращает результат.
+                            В ecole: 
+                                Начинает решение до первого узла ветвления.
+                            Начинает решение с использованием стандартных настроек SCIP (SCIPsolve) и
+                            передает управление пользователю на первом этапе ветвления.
+                            Пользователи могут наследоваться от этой динамики, чтобы изменить стандартные настройки, 
+                            такие как предварительное решение и плоскости разрезов.
+                                        """ 
+                                                        
         # set time limit after reset
-        reset_time = pyscipopt_model.getSolvingTime()
-        pyscipopt_model.setParam("limits/time", self.time_limit + reset_time)
+        reset_time = pyscipopt_model.getSolvingTime() # Получает время, затраченное на решение модели после сброса
+        pyscipopt_model.setParam("limits/time", self.time_limit + reset_time) # Устанавливает ограничение времени для модели, добавляя к текущему времени сброса значение time_limit
 
-        return done, action_set
+        return done, action_set    # done: Решена ли задача.
+                            # action_set: Список индексов переменных-кандидатов для ветвления.
+                                    # Доступные кандидаты зависят от параметров в init().
+                                    # Индексы переменных (значения в action_set) - это их позиция в исходной задаче (SCIPvarGetProbindex).
+                                    # Порядок переменных в action_set произвольный.
 
 
 class ConfiguringDynamics(ecole.dynamics.ConfiguringDynamics):
