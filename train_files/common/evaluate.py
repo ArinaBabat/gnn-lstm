@@ -12,6 +12,8 @@ class ExploreThenStrongBranch:
     """
     This custom observation function class will randomly return either strong branching scores (expensive expert)
     or pseudocost scores (weak expert for exploration) when called at every node.
+    Этот пользовательский класс функции наблюдения будет случайным образом возвращать либо оценки стронг-бранчинга (дорогостоящего эксперта) 
+    либо оценки псевдокост (слабого эксперта для исследования), когда его вызывают на каждом узле
     """
 
     def __init__(self, expert_probability):
@@ -22,6 +24,7 @@ class ExploreThenStrongBranch:
     def before_reset(self, model):
         """
         This function will be called at initialization of the environment (before dynamics are reset).
+        Эта функция будет вызвана при инициализации среды (до сброса динамики)
         """
         self.pseudocosts_function.before_reset(model)
         self.strong_branching_function.before_reset(model)
@@ -29,6 +32,7 @@ class ExploreThenStrongBranch:
     def extract(self, model, done):
         """
         Should we return strong branching or pseudocost scores at time node?
+        Следует ли возвращать оценки стронг-бранчинга или оценки псевдокост на данном узле?
         """
         probabilities = [1 - self.expert_probability, self.expert_probability]
         expert_chosen = bool(np.random.choice(np.arange(2), p=probabilities))
@@ -124,7 +128,7 @@ if __name__ == "__main__":
 
     sys.path.insert(1, str(pathlib.Path.cwd()))
 
-    # set up the proper agent, environment and goal for the task
+    # set up the proper agent, environment and goal for the task Настроить соответствующего агента, среду и цель для задачи
     if args.task == "primal":
         from agents.primal import Policy, ObservationFunction
         from environments import RootPrimalSearch as Environment
@@ -149,7 +153,7 @@ if __name__ == "__main__":
 
         time_limit = 15 * 60
 
-    # override from command-line argument if provided
+    # override from command-line argument if provided Переопределить, если предоставлено через аргумент командной строки
     time_limit = getattr(args, "timelimit", time_limit)
 
     policy = Policy(problem=args.problem)
@@ -160,23 +164,23 @@ if __name__ == "__main__":
     env = Environment(  # Environment
         time_limit=time_limit,
         observation_function=observation_function,  # (ExploreThenStrongBranch(expert_probability=1.0),observation_function),              #observation_function, ec.observation.NodeBipartite()
-        reward_function=-integral_function,  # negated integral (minimization)
+        reward_function=-integral_function,  # negated integral (minimization) Интеграл с отрицательным знаком (минимизация)
     )
 
-    # evaluation loop
+    # evaluation loop Цикл оценки
     instance_count = 0
     for seed, instance in enumerate(instance_files):
         instance_count += 1
-        # seed both the agent and the environment (deterministic behavior)
+        # seed both the agent and the environment (deterministic behavior) Установите зерно для агента и среды (детерминированное поведение)
         observation_function.seed(seed)
         policy.seed(seed)
         env.seed(seed)
 
-        # read the instance's initial primal and dual bounds from JSON file
+        # read the instance's initial primal and dual bounds from JSON file Считать начальные примитивные и двойственные оценки для экземпляра из файла JSON
         with open(instance.with_name(instance.stem).with_suffix(".json")) as f:
             instance_info = json.load(f)
 
-        # set up the reward function parameters for that instance
+        # set up the reward function parameters for that instance Настроить параметры функции вознаграждения для этого экземпляра
         initial_primal_bound = instance_info["primal_bound"]
         initial_dual_bound = instance_info["dual_bound"]
         objective_offset = 0
