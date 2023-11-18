@@ -19,7 +19,10 @@ class ExploreThenStrongBranch:
     def __init__(self, expert_probability):     # Инициализация экземпляра класса . Принимает параметр expert_probability, вероятность выбора стронг бренчинга.
         self.expert_probability = expert_probability
         # Создание экземпляров классов Pseudocosts и StrongBranchingScores из библиотеки Ecole
-        self.pseudocosts_function = ec.observation.Pseudocosts()
+        self.pseudocosts_function = ec.observation.Pseudocosts()"""функция наблюдения за псевдокостами на узлах метода ветвей
+                                    и границ. Псевдокост - это дешевое приближение к оценкам стронг-бранчинга. 
+                                    Измеряет качество ветвления для каждой переменной. 
+                                    Всегда ветвится на переменную с наивысшим псевдокостом. """
         self.strong_branching_function = ec.observation.StrongBranchingScores() """Функция наблюдения за оценками стронг-бранчинга
                                             на узле метода ветвей и границ. Эта функция наблюдения получает оценки для всех переменных
                                             кандидатов для LP или псевдокандидатов на узле метода ветвей и границ. 
@@ -35,8 +38,9 @@ class ExploreThenStrongBranch:
         Эта функция будет вызвана при инициализации среды (до сброса динамики)
         """
         # Вызов методов before_reset для обоих типов наблюдений
-        self.pseudocosts_function.before_reset(model)
-        self.strong_branching_function.before_reset(model)
+        self.pseudocosts_function.before_reset(model) # метод before_reset не делает ничего
+                                    # вызывается при инициализации функции наблюдения перед сбросом динамики.
+        self.strong_branching_function.before_reset(model) # так же
 
     def extract(self, model, done):
         """
