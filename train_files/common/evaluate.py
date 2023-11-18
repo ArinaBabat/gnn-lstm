@@ -56,7 +56,9 @@ class ExploreThenStrongBranch:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser() # Создание объекта парсера аргументов командной строки с помощью библиотеки argparse
+                        # предоставляет удобный интерфейс для анализа и обработки аргументов командной строки, переданных при запуске программы
+   # Добавление аргументов командной строки. Каждый аргумент определяет, как скрипт должен вести себя в зависимости от переданных параметров
     parser.add_argument("--start", type=int, default=0, help="start")
     parser.add_argument("--end", type=int, default=-1, help="end")
     parser.add_argument("--exp_name", type=str, default="", help="end")
@@ -86,11 +88,15 @@ if __name__ == "__main__":
         type=str,
         choices=("valid", "test", "train"),
     )
-    args = parser.parse_args()
+    args = parser.parse_args() # Парсинг переданных аргументов командной строки.
 
     print(f"Evaluating the {args.task} task agent.")
 
     # collect the instance files
+    """
+    Определение путей к файлам с инстансами задачи и файлу результатов в зависимости от переданных аргументов. 
+    Проверяется параметр args.problem, и на основе его значения выбирается соответствующий путь.
+    """
     if args.problem == "item_placement":
         instances_path = pathlib.Path(
             f"../../instances/1_item_placement/{args.folder}/"
@@ -121,11 +127,11 @@ if __name__ == "__main__":
         )
 
     print(f"Processing instances from {instances_path.resolve()}")
-    instance_files = list(instances_path.glob("*.mps.gz"))[args.start : args.end]
+    instance_files = list(instances_path.glob("*.mps.gz"))[args.start : args.end] # Получение списка файлов с инстансами в указанном диапазоне
 
     print(f"Saving results to {results_file.resolve()}")
     results_file.parent.mkdir(parents=True, exist_ok=True)
-    results_fieldnames = [
+    results_fieldnames = [    # Определение полей, которые будут записаны в файл результатов.
         "instance",
         "seed",
         "initial_primal_bound",
@@ -133,9 +139,9 @@ if __name__ == "__main__":
         "objective_offset",
         "cumulated_reward",
     ]
-    with open(results_file, mode="w") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=results_fieldnames)
-        writer.writeheader()
+    with open(results_file, mode="w") as csv_file:    # Открывает CSV-файл results_file в режиме записи
+        writer = csv.DictWriter(csv_file, fieldnames=results_fieldnames) #оздает объект csv.DictWriter для записи результатов в файл. Заголовки CSV определены в results_fieldnames
+        writer.writeheader()    #Запись в файл
 
     import sys
 
