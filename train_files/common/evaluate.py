@@ -1,7 +1,7 @@
-import argparse
+import argparse    # Библиотека для обработки аргументов командной строки
 import csv
 import json
-import pathlib
+import pathlib     # Модуль для манипуляции путями файловой системы
 import time
 
 import ecole as ec
@@ -16,16 +16,25 @@ class ExploreThenStrongBranch:
     либо оценки псевдокост (слабого эксперта для исследования), когда его вызывают на каждом узле
     """
 
-    def __init__(self, expert_probability):
+    def __init__(self, expert_probability):     # Инициализация экземпляра класса . Принимает параметр expert_probability, вероятность выбора стронг бренчинга.
         self.expert_probability = expert_probability
+        # Создание экземпляров классов Pseudocosts и StrongBranchingScores из библиотеки Ecole
         self.pseudocosts_function = ec.observation.Pseudocosts()
-        self.strong_branching_function = ec.observation.StrongBranchingScores()
+        self.strong_branching_function = ec.observation.StrongBranchingScores() """Функция наблюдения за оценками стронг-бранчинга
+                                            на узле метода ветвей и границ. Эта функция наблюдения получает оценки для всех переменных
+                                            кандидатов для LP или псевдокандидатов на узле метода ветвей и границ. 
+                                            Оценка стронг-бранчинга измеряет качество каждой переменной для ветвления (чем выше, тем лучше).
+                                            Эта функция наблюдения извлекает массив, содержащий оценки стронг-бранчинга для каждой
+                                            переменной в задаче. Переменные упорядочены в соответствии с их позицией в исходной задаче
+                                            (SCIPvarGetProbindex), следовательно, к ним можно обращаться по индексам в action_set среды ветвления.
+                                            Для переменных, для которых оценка стронг-бранчинга не применима, заполняются значениями NaN."""
 
     def before_reset(self, model):
         """
         This function will be called at initialization of the environment (before dynamics are reset).
         Эта функция будет вызвана при инициализации среды (до сброса динамики)
         """
+        # Вызов методов before_reset для обоих типов наблюдений
         self.pseudocosts_function.before_reset(model)
         self.strong_branching_function.before_reset(model)
 
@@ -34,9 +43,9 @@ class ExploreThenStrongBranch:
         Should we return strong branching or pseudocost scores at time node?
         Следует ли возвращать оценки стронг-бранчинга или оценки псевдокост на данном узле?
         """
-        probabilities = [1 - self.expert_probability, self.expert_probability]
-        expert_chosen = bool(np.random.choice(np.arange(2), p=probabilities))
-        if expert_chosen:
+        probabilities = [1 - self.expert_probability, self.expert_probability] # Вероятности выбора дорогостоящего и дешевого экспертов
+        expert_chosen = bool(np.random.choice(np.arange(2), p=probabilities)) # Выбор эксперта в соответствии с вероятностями
+        if expert_chosen: # Возврат оценок выбранного эксперта
             return (self.strong_branching_function.extract(model, done), True)
         else:
             return (self.pseudocosts_function.extract(model, done), False)
