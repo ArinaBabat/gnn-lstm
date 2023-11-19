@@ -1,20 +1,22 @@
-import argparse
-import csv
+import argparse    # для обработки аргументов командной строки
+import csv    # для работы с CSV-файлами
 import json
-import pathlib
-import time
-import datetime
-import ecole
-import numpy as np
-import sys
+import pathlib    # для работы с путями к файлам и директориям
+import time    
+import datetime    
+import ecole    
+import numpy as np    
+import sys    
 import pandas as pd
-import gzip
-import pickle
+import gzip    # для работы с файлами в формате Gzip (сжатие данных)
+import pickle    # для сериализации и десериализации объектов Python
 
-sys.path.insert(1, '/'.join(str(pathlib.Path.cwd()).split('/')[0:-1]))
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-problem",
+sys.path.insert(1, '/'.join(str(pathlib.Path.cwd()).split('/')[0:-1])) # добавляет второй элемент в sys.path, 
+                                        # который является текущей рабочей директорией за исключением последнего элемента
+                                        # чтобы иметь доступ к модулям из предыдущего каталога
+parser = argparse.ArgumentParser() # создает парсер аргументов командной строки
+parser.add_argument(    # Программе разрешено принимать аргумент -problem, 
+    "-problem",        # который выбирает задачу для обработки из предопределенного набора
     help="Problem benchmark to process.",
     choices=["policy2_64_0", "policy2_64_1", "policy2_64_2","policy2_64_3", \
     "policy2_128_0", "policy2_128_1", "policy2_128_2","policy2_128_3", \
@@ -24,7 +26,8 @@ parser.add_argument(
     "policy3_256_0", "policy3_256_1", "policy3_256_2","policy3_256_3", \
     ],
 )
-args = parser.parse_args()
+args = parser.parse_args() # парсит аргументы командной строки и сохраняет их в объект args
+                # Теперь можно использовать args.problem для доступа к значению аргумента -problem
 
 from dual import (
     Policy,
@@ -34,19 +37,20 @@ from dual import (
 from environments import Branching as Environment  # environments
 from rewards import TimeLimitDualIntegral as BoundIntegral  # rewards
 
-inst = "/content/explore_nuri/Nuri/instances/train_test/mas76.mps.gz"
-out_dir = "/content/gdrive/MyDrive/evaluate_data"
+inst = "/content/explore_nuri/Nuri/instances/train_test/mas76.mps.gz" # устанавливает переменную inst для указания пути к файлу с задачей для обработки
+out_dir = "/content/gdrive/MyDrive/evaluate_data"    # переменная для указания директории, в которой будут сохранены результаты
 
-print(f"instance:{inst}")
+print(f"instance:{inst}")    # информация о текущем экземпляре задачи
 
 time_limit = 15 * 60
 
-strbr = ecole.observation.StrongBranchingScores()
-policy = Policy(problem=args.problem)
+strbr = ecole.observation.StrongBranchingScores()    # Создает объект для измерения стронг бранчинга. Описание из ecole в evaluate.py
+      
+policy = Policy(problem=args.problem) # Создает объект Policy для обработки задачи в зависимости от выбранного аргумента
 
-env = ecole.environment.Branching(observation_function=ObservationFunction(problem=args.problem))
+env = ecole.environment.Branching(observation_function=ObservationFunction(problem=args.problem)) #Создает среду Branching с функцией наблюдения, соответствующей выбранной задаче
 
-observation, action_set, reward, done, info = env.reset(inst)
+observation, action_set, reward, done, info = env.reset(inst) # Инициализирует среду, сбрасывает ее в начальное состояние, возвращает начальные значения
 correct_predictions = 0
 total_predictions = 0
 rand_accuracy = 0
@@ -61,7 +65,7 @@ sum_rand_err = 0
 total_action_set = 0
 sum_acc = 0
 
-acc_list = {
+acc_list = {            # словарь, в котором будут храниться массивы для каждой метрики
   'metric1':np.array([]),
   'exp_metric1':np.array([]),
   'metric2':np.array([]),
