@@ -211,8 +211,11 @@ class TimeLimitPrimalDualIntegral(ecole.reward.PrimalDualIntegral):
         # Вызываем конструктор родительского класса PrimalDualIntegral с определенными параметрами
         super().__init__(    # Создает функцию награды PrimalDualIntegral
             wall=True,  # Используем время настенных часов (wall time)
-            # Функция, возвращающая кортеж (initial_primal_bound, initial_dual_bound) для вычисления интегралов
-            bound_function=lambda model: (
+            bound_function=lambda model: (    """ Функция, которая принимает модель ecole и возвращает кортеж
+                начальной примитивной границы и двойной границы (initial_primal_bound, initial_dual_bound) для
+                вычисления интегралов. Значения должны быть упорядочены как (начальная примитивная граница, 
+                начальная двойная граница). Функция по умолчанию возвращает (-1e20, 1e20), если проблема максимизации,
+                и (1e20, -1e20) в противном случае."""
                 self.parameters.initial_primal_bound,
                 self.parameters.initial_dual_bound,
             ),
@@ -232,11 +235,12 @@ class TimeLimitPrimalDualIntegral(ecole.reward.PrimalDualIntegral):
         # Перед сбросом модели устанавливаем значения параметров
         self.parameters.fetch_values(model)
         # Вызываем метод before_reset родительского класса
-        super().before_reset(model)
+        super().before_reset(model)    # Сбрасывает внутренний счетчик времени и обработчик событий
 
     def extract(self, model, done):
         # Вычисляем награду с использованием метода extract родительского класса
-        reward = super().extract(model, done)
+        reward = super().extract(model, done)    # Вычисляет текущий примитивно-двойной интеграл и возвращает разницу.
+                                # Разница вычисляется на основе примитивно-двойного интеграла между последовательными вызовами.
 
         # Корректируем конечную награду, если лимит времени не достигнут
         if done:
