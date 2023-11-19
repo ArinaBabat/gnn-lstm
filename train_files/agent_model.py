@@ -3,13 +3,17 @@ import torch.nn.functional as F
 import torch_geometric
 import numpy as np
 
+# Проверяем доступность GPU и устанавливаем устройство
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class PreNormException(Exception):
     pass
 
-
+"""
+PreNormLayer - класс, который наследуется от torch.nn.Module
+ и реализует функциональность слоя предварительной нормализации.
+"""
 class PreNormLayer(torch.nn.Module):
     def __init__(self, n_units, shift=True, scale=True, name=None):
         super().__init__()
