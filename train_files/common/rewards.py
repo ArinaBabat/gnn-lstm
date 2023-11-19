@@ -42,48 +42,77 @@ class IntegralParameters:
                 -m.infinity() if m.getObjectiveSense() == "minimize" else m.infinity()
             )
 
+"""
+Определение класса TimeLimitPrimalIntegral, который является подклассом ecole.reward.PrimalIntegral
+В ecole: Разность примитивного интеграла.
+    Награда определяется как примитивный интеграл с момента предыдущего состояния,
+    где интеграл вычисляется относительно времени решения. Время решения зависит от
+    операционной системы: оно включает время, затраченное в методе reset(),
+    и время, затраченное на ожидание от агента.
 
+"""
 class TimeLimitPrimalIntegral(ecole.reward.PrimalIntegral):
+    # Конструктор класса
     def __init__(self):
+        # Инициализация атрибута parameters объектом класса IntegralParameters
         self.parameters = IntegralParameters()
-        super().__init__(
-            wall=True,
+        
+        # Вызов конструктора суперкласса ecole.reward.PrimalIntegral
+        super().__init__(    # Создает функцию награды PrimalIntegral.
+            wall=True,  # Использовать стеночные временные лимиты (используется время от стены (wall time))
+            """Функция, которая принимает модель ecole и возвращает кортеж начального примитивного
+                ограничения и смещения для вычисления примитивного ограничения относительно него.
+                Значения должны быть упорядочены как (смещение, начальное примитивное ограничение).
+                Если не предоставлено, функция по умолчанию возвращает (0, -1e20) для задачи
+                на максимумизацию и (0, 1e20) в противном случае."""
             bound_function=lambda model: (
                 self.parameters.offset,
                 self.parameters.initial_primal_bound,
-            ),
+            ),  # Функция для получения ограничений для интеграла
         )
 
+    # Метод для установки параметров
     def set_parameters(
         self, objective_offset=None, initial_primal_bound=None, initial_dual_bound=None
     ):
+        # Создание нового объекта IntegralParameters с переданными значениями
         self.parameters = IntegralParameters(
             offset=objective_offset,
             initial_primal_bound=initial_primal_bound,
             initial_dual_bound=initial_dual_bound,
         )
 
+    # Метод, вызываемый перед сбросом состояния среды
     def before_reset(self, model):
+        # Извлечение значений параметров из модели и установка их в объект parameters
         self.parameters.fetch_values(model)
+        
+        # Вызов соответствующего метода суперкласса
         super().before_reset(model)
 
+    # Метод для извлечения значения интеграла
     def extract(self, model, done):
+        # Извлечение значения интеграла с использованием метода суперкласса
         reward = super().extract(model, done)
 
-        # adjust the final reward if the time limit has not been reached
+        # Коррекция значения интеграла, если временной лимит не достигнут
         if done:
             m = model.as_pyscipopt()
-            # keep integrating over the time left
+            
+            # Вычисление времени, оставшегося до истечения временного лимита
             time_left = max(m.getParam("limits/time") - m.getSolvingTime(), 0)
+            
+            # Получение текущего примитивного ограничения
             if m.getStage() < pyscipopt.scip.PY_SCIP_STAGE.TRANSFORMED:
                 primal_bound = m.getObjlimit()
             else:
                 primal_bound = m.getPrimalbound()
 
+            # Получение значений из параметров
             offset = self.parameters.offset
             initial_primal_bound = self.parameters.initial_primal_bound
 
-            # account for the model's objective direction (maximization vs minimization)
+            # Учет направления целевой функции (максимизация или минимизация)
             if m.getObjectiveSense() == "minimize":
                 reward += (min(primal_bound, initial_primal_bound) - offset) * time_left
             else:
