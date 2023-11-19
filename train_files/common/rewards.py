@@ -59,7 +59,7 @@ class TimeLimitPrimalIntegral(ecole.reward.PrimalIntegral):
         
         # Вызов конструктора суперкласса ecole.reward.PrimalIntegral
         super().__init__(    # Создает функцию награды PrimalIntegral.
-            wall=True,  # Использовать стеночные временные лимиты (используется время от стены (wall time))
+            wall=True,  # Использовать время настенных часов(используется время от стены (wall time))
   
                 
             bound_function=lambda model: (    """ Функция, которая принимает модель ecole и возвращает кортеж начального примитивного
@@ -124,13 +124,24 @@ class TimeLimitPrimalIntegral(ecole.reward.PrimalIntegral):
 
         return reward
 
-
+"""
+В ecole:
+Награда определяется как двойной интеграл с момента предыдущего состояния, 
+где интеграл вычисляется относительно времени решения. Время решения зависит от операционной системы:
+оно включает время, проведенное в reset() и время, потраченное на ожидание агента.
+"""
 class TimeLimitDualIntegral(ecole.reward.DualIntegral):
-    def __init__(self):
+    def __init__(self):    
+        # Создаем экземпляр класса IntegralParameters для хранения параметров
         self.parameters = IntegralParameters()
-        super().__init__(
-            wall=True,
-            bound_function=lambda model: (
+        
+        # Вызываем конструктор родительского класса DualIntegral с определенными параметрами
+        super().__init__(    # Создает функцию награды DualIntegral
+            wall=True,  # будет использоваться время настенных часов (wall time)
+
+            bound_function=lambda model: (   """ Функция, которая принимает модель ecole и возвращает кортеж начальной двойной границы и смещения
+            для вычисления двойной границы относительно (offset, initial_dual_bound) для вычисления двойного интеграла
+            начения должны быть упорядочены как (смещение, начальная двойная граница). Функция по умолчанию возвращает (0, 1e20), если проблема максимизации, и (0, -1e20) в противном случае. """
                 self.parameters.offset,
                 self.parameters.initial_dual_bound,
             ),
@@ -139,6 +150,7 @@ class TimeLimitDualIntegral(ecole.reward.DualIntegral):
     def set_parameters(
         self, objective_offset=None, initial_primal_bound=None, initial_dual_bound=None
     ):
+        # Устанавливаем параметры с использованием экземпляра IntegralParameters
         self.parameters = IntegralParameters(
             offset=objective_offset,
             initial_primal_bound=initial_primal_bound,
@@ -146,17 +158,23 @@ class TimeLimitDualIntegral(ecole.reward.DualIntegral):
         )
 
     def before_reset(self, model):
+        # Перед сбросом модели устанавливаем значения параметров
         self.parameters.fetch_values(model)
-        super().before_reset(model)
+        # Вызываем метод before_reset родительского класса
+        super().before_reset(model)    # Сбрасывает внутренний счетчик времени и обработчик событий.
 
     def extract(self, model, done):
-        reward = super().extract(model, done)
+        # Вычисляем награду с использованием метода extract родительского класса
+        reward = super().extract(model, done)    # Вычисляет текущий двойной интеграл и возвращает разницу.
+                                    # Разница вычисляется на основе двойного интеграла между последовательными вызовами.
 
-        # adjust the final reward if the time limit has not been reached
+        # Корректируем конечную награду, если лимит времени не достигнут
         if done:
             m = model.as_pyscipopt()
-            # keep integrating over the time left
+            # Интегрируем по оставшемуся времени
             time_left = max(m.getParam("limits/time") - m.getSolvingTime(), 0)
+            
+            # Вычисляем верхний предел для dual_bound в зависимости от направления цели
             if m.getStage() < pyscipopt.scip.PY_SCIP_STAGE.TRANSFORMED:
                 dual_bound = (
                     -m.infinity()
@@ -166,10 +184,11 @@ class TimeLimitDualIntegral(ecole.reward.DualIntegral):
             else:
                 dual_bound = m.getDualbound()
 
+            # Извлекаем значения параметров из экземпляра IntegralParameters
             offset = self.parameters.offset
             initial_dual_bound = self.parameters.initial_dual_bound
 
-            # account for the model's objective direction (maximization vs minimization)
+            # Учитываем направление цели модели (максимизация или минимизация)
             if m.getObjectiveSense() == "minimize":
                 reward += -(max(dual_bound, initial_dual_bound) - offset) * time_left
             else:
@@ -178,11 +197,21 @@ class TimeLimitDualIntegral(ecole.reward.DualIntegral):
         return reward
 
 
+"""
+Разница примитивно-двойного интеграла.
+Награда определяется как примитивно-двойной интеграл с момента предыдущего состояния,
+где интеграл вычисляется относительно времени решения. Время решения зависит от операционной системы: 
+оно включает время, проведенное в reset() и время, потраченное на ожидание агента.
+"""
 class TimeLimitPrimalDualIntegral(ecole.reward.PrimalDualIntegral):
     def __init__(self):
+        # Создаем экземпляр класса IntegralParameters для хранения параметров
         self.parameters = IntegralParameters()
-        super().__init__(
-            wall=True,
+        
+        # Вызываем конструктор родительского класса PrimalDualIntegral с определенными параметрами
+        super().__init__(    # Создает функцию награды PrimalDualIntegral
+            wall=True,  # Используем время настенных часов (wall time)
+            # Функция, возвращающая кортеж (initial_primal_bound, initial_dual_bound) для вычисления интегралов
             bound_function=lambda model: (
                 self.parameters.initial_primal_bound,
                 self.parameters.initial_dual_bound,
@@ -192,6 +221,7 @@ class TimeLimitPrimalDualIntegral(ecole.reward.PrimalDualIntegral):
     def set_parameters(
         self, objective_offset=None, initial_primal_bound=None, initial_dual_bound=None
     ):
+        # Устанавливаем параметры с использованием экземпляра IntegralParameters
         self.parameters = IntegralParameters(
             offset=objective_offset,
             initial_primal_bound=initial_primal_bound,
@@ -199,17 +229,22 @@ class TimeLimitPrimalDualIntegral(ecole.reward.PrimalDualIntegral):
         )
 
     def before_reset(self, model):
+        # Перед сбросом модели устанавливаем значения параметров
         self.parameters.fetch_values(model)
+        # Вызываем метод before_reset родительского класса
         super().before_reset(model)
 
     def extract(self, model, done):
+        # Вычисляем награду с использованием метода extract родительского класса
         reward = super().extract(model, done)
 
-        # adjust the final reward if the time limit has not been reached
+        # Корректируем конечную награду, если лимит времени не достигнут
         if done:
             m = model.as_pyscipopt()
-            # keep integrating over the time left
+            # Интегрируем по оставшемуся времени
             time_left = max(m.getParam("limits/time") - m.getSolvingTime(), 0)
+            
+            # Вычисляем верхний предел для primal_bound и dual_bound в зависимости от направления цели
             if m.getStage() < pyscipopt.scip.PY_SCIP_STAGE.TRANSFORMED:
                 primal_bound = m.getObjlimit()
                 dual_bound = (
@@ -221,10 +256,11 @@ class TimeLimitPrimalDualIntegral(ecole.reward.PrimalDualIntegral):
                 primal_bound = m.getPrimalbound()
                 dual_bound = m.getDualbound()
 
+            # Извлекаем значения параметров из экземпляра IntegralParameters
             initial_primal_bound = self.parameters.initial_primal_bound
             initial_dual_bound = self.parameters.initial_dual_bound
 
-            # account for the model's objective direction (maximization vs minimization)
+            # Учитываем направление цели модели (максимизация или минимизация)
             if m.getObjectiveSense() == "minimize":
                 reward += (
                     min(primal_bound, initial_primal_bound)
