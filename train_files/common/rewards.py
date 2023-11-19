@@ -1,36 +1,43 @@
 import ecole
-import pyscipopt
+import pyscipopt    # интерфейс для SCIP
 
 
 class IntegralParameters:
     def __init__(self, offset=None, initial_primal_bound=None, initial_dual_bound=None):
-        self._offset = offset
-        self._initial_primal_bound = initial_primal_bound
-        self._initial_dual_bound = initial_dual_bound
+        # Установка атрибутов объекта
+        self._offset = offset  # Смещение
+        self._initial_primal_bound = initial_primal_bound  # Начальная примитивная оценка
+        self._initial_dual_bound = initial_dual_bound  # Начальная двойственная оценка
 
+    # Метод для извлечения значений параметров
     def fetch_values(self, model):
-        # trick to allow the parameters to be set dynamically
+        # Проверка и установка смещения
         self.offset = self._offset() if callable(self._offset) else self._offset
+
+        # Проверка и установка начальной примитивной оценки
         self.initial_primal_bound = (
             self._initial_primal_bound()
             if callable(self._initial_primal_bound)
             else self._initial_primal_bound
         )
+
+        # Проверка и установка начальной двойственной оценки
         self.initial_dual_bound = (
             self._initial_dual_bound()
             if callable(self._initial_dual_bound)
             else self._initial_dual_bound
         )
 
-        # fetch default values if none was provided
+        # Получение значений по умолчанию, если они не предоставлены
         if self.offset is None:
-            self.offset = 0.0
+            self.offset = 0.0  # Значение смещения по умолчанию
 
         if self.initial_primal_bound is None:
-            self.initial_primal_bound = model.as_pyscipopt().getObjlimit()
+            self.initial_primal_bound = model.as_pyscipopt().getObjlimit()  # Получение ограничения для начальной примитивной оценки
 
         if self.initial_dual_bound is None:
             m = model.as_pyscipopt()
+            # Установка начальной двойственной оценки в бесконечность или минус бесконечность в зависимости от направления оптимизации
             self.initial_dual_bound = (
                 -m.infinity() if m.getObjectiveSense() == "minimize" else m.infinity()
             )
