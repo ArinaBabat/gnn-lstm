@@ -1,8 +1,8 @@
-import os
-import torch
+import os    # функции для работы с операционной системой
+import torch    # инструменты для работы с тензорами, автоматического дифференцирования, оптимизации и построения глубоких нейронных сетей
 import ecole as ec
 import numpy as np
-import collections
+import collections    # альтернативные типы контейнеров данных, дополнительные возможности по управлению коллекциями объектов
 import random
 from agent_model import GNNPolicy2_64_0, GNNPolicy2_64_1, GNNPolicy2_64_2, GNNPolicy2_64_3, GNNPolicy2_128_0, \
     GNNPolicy2_128_1, GNNPolicy2_128_2, GNNPolicy2_128_3, GNNPolicy2_256_0, GNNPolicy2_256_1, GNNPolicy2_256_2, \
