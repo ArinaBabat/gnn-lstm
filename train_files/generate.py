@@ -1,6 +1,6 @@
-import os
-import sys
-import glob
+import os    # взаимодействие с ос
+import sys    # функции и переменные, взаимодействующие с интерпретатором Python
+import glob    # для поиска файлов с использованием шаблонов (при удалении файлов с расширением .pkl)
 import gzip
 import json
 import ecole
@@ -19,6 +19,7 @@ import random
 import zipfile
 
 # import environment
+# добавление пути к модулю Branching в пакете common.environments
 sys.path.append('../..')
 from common.environments import Branching as Environment
 
