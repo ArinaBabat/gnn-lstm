@@ -111,22 +111,33 @@ class Policy():
         self.rng = np.random.RandomState(seed)
 
     def __call__(self, action_set, observation):
+        # Если решается проблема балансировки нагрузки, выбираем случайное действие из action_set.
         if self.problem == 'load_balancing':
             return random.choice(action_set)
         else:
+            # Извлекаем признаки переменных из observation.
             variable_features = observation.column_features
+    
+            # Удаляем 14-й и 13-й столбцы из признаков переменных.
             variable_features = np.delete(variable_features, 14, axis=1)
             variable_features = np.delete(variable_features, 13, axis=1)
-
+    
+            # Переводим признаки ограничений, ребер и переменных в формат torch.Tensor и передаем на устройство (device).
             constraint_features = torch.FloatTensor(observation.row_features).to(self.device)
             edge_index = torch.LongTensor(observation.edge_features.indices.astype(np.int64)).to(self.device)
             edge_attr = torch.FloatTensor(np.expand_dims(observation.edge_features.values, axis=-1)).to(self.device)
             variable_features = torch.FloatTensor(variable_features).to(self.device)
             action_set = torch.LongTensor(np.array(action_set, dtype=np.int64)).to(self.device)
-
+    
+            # Получаем логиты (необработанные оценки) от политики на основе переданных признаков.
             logits = self.policy(constraint_features, edge_index, edge_attr, variable_features)
+    
+            # Оставляем только логиты для действий в action_set.
             logits = logits[action_set]
+    
+            # Определяем индекс действия с наибольшим логитом и возвращаем это действие.
             action_idx = logits.argmax().item()
             action = action_set[action_idx]
-
+    
             return action
+
