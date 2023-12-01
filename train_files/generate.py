@@ -1,22 +1,22 @@
 import os    # взаимодействие с ос
 import sys    # функции и переменные, взаимодействующие с интерпретатором Python
 import glob    # для поиска файлов с использованием шаблонов (при удалении файлов с расширением .pkl)
-import gzip
+import gzip    # для работы с gzip-сжатыми файлами
 import json
 import ecole
-import queue
-import pickle
-import shutil
-import argparse
-import threading
+import queue    # очередь FIFO
+import pickle    # для сериализации и десериализации объектов Python
+import shutil    # утилиты для работы с файлами и директориями
+import argparse    # 
+import threading    # предоставляет многозадачность
 import numpy as np
-from pathlib import Path
+from pathlib import Path    # 
 from datetime import datetime
 import time
-import collections
-import multiprocessing
+import collections    # специализированные контейнеры данных
+import multiprocessing    # для параллельных вычислений
 import random
-import zipfile
+import zipfile    # позволяет создавать, читать и обновлять архивы ZIP
 
 # import environment
 # добавление пути к модулю Branching в пакете common.environments
