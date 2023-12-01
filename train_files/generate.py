@@ -10,7 +10,7 @@ import shutil    # утилиты для работы с файлами и ди�
 import argparse    # 
 import threading    # предоставляет многозадачность
 import numpy as np
-from pathlib import Path    # 
+from pathlib import Path    # объектно-ориентированный интерфейс для работы с путями к файлам и директориям
 from datetime import datetime
 import time
 import collections    # специализированные контейнеры данных
